@@ -110,7 +110,7 @@ ADULT_MEDIA_MAX_IN_LAST5 = int(os.environ.get('ADULT_MEDIA_MAX_IN_LAST5', '1'))
 ADULT_MEDIA_LOOKBACK = int(os.environ.get('ADULT_MEDIA_LOOKBACK', '5'))
 
 # --- 未成年を想起させる作品の除外（アカウント停止リスクの回避。完全な検出ではない） ---
-EXCLUDE_MINOR_THEMED = os.environ.get('EXCLUDE_MINOR_THEMED', 'true').strip().lower() == 'true'
+EXCLUDE_MINOR_THEMED = os.environ.get('EXCLUDE_MINOR_THEMED', 'false').strip().lower() == 'true'
 MINOR_THEMED_WORDS = [
     'ロリ', 'ショタ', '幼女', '幼児', '幼い', '少女', '女児', '男児', '児童', '園児', 'ランドセル', '未成年',
     '小学', '中学', '高校', '女子校', '男子校', '女子高', '男子高', '学生', '生徒', '制服', '学園', '学校',
