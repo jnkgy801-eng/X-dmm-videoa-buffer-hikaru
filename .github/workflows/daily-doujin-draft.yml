@@ -14,7 +14,13 @@ on:
   workflow_dispatch: {}  # 手動実行もできるようにしておく
 
 permissions:
-  contents: write  # 重複除外用の履歴ファイルをコミットし直すために必要
+  contents: write  # 重複除外用の履歴ファイル・投稿ログをコミットし直すために必要
+
+# 手動実行と定期実行が重なると、投稿ログ(outputs/dmm_doujin_post_log.json)が競合して
+# 同じ枠に2件予約されたり、画像上限の判定がずれたりするため直列化する
+concurrency:
+  group: doujin-x-post
+  cancel-in-progress: false
 
 jobs:
   generate-draft:
@@ -40,11 +46,22 @@ jobs:
           DMM_AFFILIATE_ID: ${{ secrets.DMM_AFFILIATE_ID }}
           OUTPUT_DIR: ${{ github.workspace }}/outputs
           # 必要に応じて調整してください
-          RANK_COUNT: '3'
+          # 【Xの新ルール対応】連投は自分の投稿同士で評価を食い合うため、1日2スレッド
+          RANK_COUNT: '2'
           FETCH_HITS: '30'
           HISTORY_KEEP_DAYS: '30'
           # --- Buffer連携（任意。両方設定した場合のみ本投稿としてBufferに自動送信）---
           # saveToDraft=false のため、人間の承認なしにBuffer側のスケジュールで自動公開されます。
+          # 予約は「昼12-13時・夜20-22時の枠に1スレッドずつ」（JST）。Buffer側のスケジュールには任せない。
+          BUFFER_SCHEDULING_MODE: 'customScheduled'
+          POST_WINDOWS: '[[12,13],[20,22]]'
+          # 成人向けサンプル画像は「直近5スレッド中この件数まで」（残りはテキストのみ）。
+          # 直近5投稿中3件で警告→フォロワー外に一切表示されなくなるため、1を推奨。
+          # 同じXアカウントへ別ツールからも画像投稿している場合は 0 にする。
+          ADULT_MEDIA_MAX_IN_LAST5: ${{ vars.ADULT_MEDIA_MAX_IN_LAST5 || '1' }}
+          IMAGES_IN_MAIN: ${{ vars.IMAGES_IN_MAIN || '4' }}
+          # 未成年を想起させる作品の除外（アカウント停止リスク回避）。追加語はカンマ区切りで指定
+          EXCLUDE_MINOR_THEMED: 'true'
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_CHANNEL_IDS: ${{ secrets.BUFFER_CHANNEL_IDS }}
         run: |
@@ -66,6 +83,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if [ -f outputs/dmm_doujin_ranking_history.json ]; then
             git add outputs/dmm_doujin_ranking_history.json
+            [ -f outputs/dmm_doujin_post_log.json ] && git add outputs/dmm_doujin_post_log.json
             git diff --cached --quiet || git commit -m "chore: 同人ランキング投稿履歴を更新"
             git push
           else
