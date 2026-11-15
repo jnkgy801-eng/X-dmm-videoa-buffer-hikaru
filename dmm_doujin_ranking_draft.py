@@ -413,7 +413,7 @@ REPLY_LEADS = [  # 同じ文章の使い回しはスパム扱いされやすい�
     '▼ 購入前にサンプル確認できます',
     '▼ 詳しくはこちらから',
 ]
-PR_TAG = '#PR'
+PR_TAG = ' '
 
 
 def _item_facts(item):
@@ -466,7 +466,7 @@ def build_thread_draft(rank, item, with_media=False):
 
     def main_text(title_limit, use_hook=True):
         t = (title[:title_limit] + '…') if len(title) > title_limit else title
-        lines = [hook if use_hook else None, f'📖 {t}', f"✍ サークル：{f['maker'][:25]}" if f['maker'] else None]
+        lines = [hook if use_hook else None, f' {t}', f" サークル：{f['maker'][:25]}" if f['maker'] else None]
         return '\n'.join(l for l in lines if l) + '\n\n' + PR_TAG
 
     limit, use_hook = 40, True
